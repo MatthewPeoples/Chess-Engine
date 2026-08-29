@@ -1,0 +1,28 @@
+Checks: >
+  bugprone-*,
+  clang-analyzer-*,
+  modernize-*,
+  performance-*,
+  readability-*,
+  -readability-magic-numbers,
+  -modernize-use-trailing-return-type
+
+CheckOptions:
+  readability-identifier-naming.NamespaceCase: lower_case
+  readability-identifier-naming.ClassCase: CamelCase
+  readability-identifier-naming.StructCase: CamelCase
+  readability-identifier-naming.EnumCase: CamelCase
+  readability-identifier-naming.FunctionCase: lower_case
+  readability-identifier-naming.VariableCase: lower_case
+  readability-identifier-naming.ParameterCase: lower_case
+  readability-identifier-naming.GlobalConstantCase: UPPER_CASE
+  readability-identifier-naming.EnumConstantCase: UPPER_CASE
+
+WarningsAsErrors: ""
+
+HeaderFilterRegex: "include/chess/.*"
+
+ExtraArgs:
+  - "--stdlib=libc++"
+  - "-isysroot"
+  - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"

@@ -1,5 +1,5 @@
 #pragma once
 
 namespace chess {
-    int square_index(int file, int rank);
+int square_index(int file, int rank);
 }

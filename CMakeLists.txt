@@ -9,8 +9,9 @@ project(chess
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 include(FetchContent)
 
@@ -24,15 +25,12 @@ FetchContent_MakeAvailable(googletest)
 
 enable_testing()
 
-# warnings
-add_library(chess_warnings INTERFACE)
-target_compile_options(chess_warnings
-    INTERFACE
-        -Wall
-        -Wextra
-        -Wpedantic
-        -Werror # fail build on any warnings
-)
+# Warnings and Sanitizers must precede target definitions:
+#   both configure chess_warnings, which the targets link
+# StaticAnalysis must follow them:
+#   it sets properties on targets that must already exist
+include(Warnings)
+include(Sanitizers)
 
 # engine core, all chess logic, no I/O
 add_library(chess_lib)
@@ -79,29 +77,4 @@ target_link_libraries(chess_tests
 )
 add_test(NAME chess_tests COMMAND chess_tests)
 
-# optional tidy checks at compile time
-option(CHESS_ENABLE_CLANG_TIDY "Run clang-tidy during build" OFF)
-
-if (CHESS_ENABLE_CLANG_TIDY)
-    find_program(CLANG_TIDY_EXE NAMES clang-tidy REQUIRED)
-    set_target_properties(chess_lib chess_uci chess_tests
-        PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_EXE}"
-    )
-endif()
-
-
-# optional sanitisers at runtime
-option(CHESS_ENABLE_SANITIZERS "Build with address and UB sanitizers" OFF)
-
-if (CHESS_ENABLE_SANITISERS)
-    target_compile_options(chess_warnings
-        INTERFACE
-            -fsanitize=address,undefined
-            -fno-omit-frame-pointer
-            -g
-    )
-    target_link_options(chess_warnings
-        INTERFACE
-            -fsanitize=address,undefined
-    )
-endif()
+include(StaticAnalysis)

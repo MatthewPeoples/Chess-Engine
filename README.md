@@ -1,5 +1,7 @@
 # Chess Engine
 
+[![CI](https://github.com/MatthewPeoples/Chess-Engine/actions/workflows/ci.yml/badge.svg)](https://github.com/MatthewPeoples/Chess-Engine/actions/workflows/ci.yml)
+
 A UCI chess engine written from scratch in C++20, using bitboard board representation.
 
 Work in progress. The build, test and tooling infrastructure is in place, but chess logic is not yet implemented.

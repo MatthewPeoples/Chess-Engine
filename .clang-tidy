@@ -21,8 +21,3 @@ CheckOptions:
 WarningsAsErrors: ""
 
 HeaderFilterRegex: "include/chess/.*"
-
-ExtraArgs:
-  - "--stdlib=libc++"
-  - "-isysroot"
-  - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"

@@ -1,32 +1,38 @@
 # Chess Engine
 
-[![CI](https://github.com/MatthewPeoples/Chess-Engine/actions/workflows/ci.yml/badge.svg)](https://github.com/MatthewPeoples/Chess-Engine/actions/workflows/ci.yml)
+[CI](https://github.com/MatthewPeoples/Chess-Engine/actions/workflows/ci.yml)
 
-A UCI chess engine written from scratch in C++20, using bitboard board representation.
+A UCI chess engine written from scratch in C++20, using bitboard board representation. Builds on Linux, macOS and Windows.
 
 Work in progress. The build, test and tooling infrastructure is in place, but chess logic is not yet implemented.
 
 ## Requirements
 
 - CMake 3.20+
-- A C++20 compiler (tested with AppleClang and GCC)
+- A C++20 compiler (tested with AppleClang, GCC and MSVC)
 
 GoogleTest is fetched automatically at configure time.
 
 ## Building
 
-Configure presets are defined in `CMakePresets.json`:
+Configure presets are defined in `CMakePresets.json`. Each writes to its own directory:
+
+| Preset    | Directory       | Flags                               |
+| --------- | --------------- | ----------------------------------- |
+| `debug`   | `build`         | `-g`                                |
+| `release` | `build-release` | `-O3`                               |
+| `asan`    | `build-asan`    | `-O2 -g`, address and UB sanitisers |
 
 ```sh
-cmake --preset debug      # -O0 -g
-cmake --preset release    # -O3
-cmake --preset asan       # -O2 -g, address and UB sanitisers
+cmake --preset debug
+cmake --build build && ctest --test-dir build --output-on-failure
 ```
 
-Then build and test:
+On Windows the Visual Studio generator is multi-config, so the configuration is chosen at build time rather than configure time:
 
 ```sh
-cmake --build build && ctest --test-dir build --output-on-failure
+cmake --build build --config Debug
+ctest --test-dir build --build-config Debug --output-on-failure
 ```
 
 ## Layout

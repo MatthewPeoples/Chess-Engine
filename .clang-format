@@ -1,6 +1,7 @@
 BasedOnStyle: LLVM
+PointerAlignment: Left
 IndentWidth: 4
-ColumnLimit: 100
+ColumnLimit: 120
 AllowShortFunctionsOnASingleLine: Empty
 AlignConsecutiveAssignments: Consecutive
 SpacesBeforeTrailingComments: 2

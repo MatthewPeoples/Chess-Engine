@@ -10,6 +10,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
@@ -32,25 +33,6 @@ enable_testing()
 include(Warnings)
 include(Sanitizers)
 
-# engine core, all chess logic, no I/O
-add_library(chess_lib)
-target_sources(chess_lib
-    PRIVATE
-        src/bitboard.cpp
-)
-target_include_directories(chess_lib
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-target_compile_features(chess_lib
-    PUBLIC
-        cxx_std_20
-)
-target_link_libraries(chess_lib
-    PRIVATE
-        chess_warnings
-)
-
 # universal chess interface
 add_executable(chess_uci)
 target_sources(chess_uci
@@ -59,22 +41,7 @@ target_sources(chess_uci
 )
 target_link_libraries(chess_uci
     PRIVATE
-        chess_lib
         chess_warnings
 )
-
-# testing suite
-add_executable(chess_tests)
-target_sources(chess_tests
-    PRIVATE
-        tests/bitboard_test.cpp
-)
-target_link_libraries(chess_tests
-    PRIVATE
-        chess_lib
-        chess_warnings
-        GTest::gtest_main
-)
-add_test(NAME chess_tests COMMAND chess_tests)
 
 include(StaticAnalysis)

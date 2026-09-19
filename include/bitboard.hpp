@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <bit>
 #include <iosfwd>
 
 #include "types.hpp"
@@ -14,6 +15,30 @@ namespace chess {
 // a shift doesnt know the board has edges, so the file that would wrap is masked off first
 inline constexpr Bitboard FILE_A_BB = 0x0101010101010101ULL;
 inline constexpr Bitboard FILE_H_BB = FILE_A_BB << 7;
+inline constexpr Bitboard RANK_1_BB = 0xFFULL;
+
+constexpr Bitboard file_bb(File f) {
+    return FILE_A_BB << f;
+}
+
+constexpr Bitboard rank_bb(Rank r) {
+    return RANK_1_BB << (8 * r);
+}
+
+// --- Walking the set bits ---
+// countr_zero counts the zeros below the lowest one bit, which is that square's number
+
+constexpr Square lsb(Bitboard bb) {
+    assert(bb != 0);
+    return Square(std::countr_zero(bb));
+}
+
+// takes the lowest square out of the board and returns it, so a while loop empties a bitboard
+constexpr Square pop_lsb(Bitboard& bb) {
+    const Square sq = lsb(bb);
+    bb &= bb - 1;  // clears the lowest one bit
+    return sq;
+}
 
 // --- Shifts ---
 // north is +8 because a rank is 8 squares; east is +1 and loses the h-file
@@ -180,6 +205,24 @@ constexpr Bitboard bishop_attacks(Square sq, Bitboard occupied) {
 // all possible queen moves, combination of rook and bishop
 constexpr Bitboard queen_attacks(Square sq, Bitboard occupied) {
     return rook_attacks(sq, occupied) | bishop_attacks(sq, occupied);
+}
+
+// whatever this piece attacks from this square, sliders blocked by occupied
+constexpr Bitboard piece_attacks(PieceType pt, Square sq, Bitboard occupied) {
+    switch (pt) {
+    case KNIGHT:
+        return knight_attacks(sq);
+    case BISHOP:
+        return bishop_attacks(sq, occupied);
+    case ROOK:
+        return rook_attacks(sq, occupied);
+    case QUEEN:
+        return queen_attacks(sq, occupied);
+    case KING:
+        return king_attacks(sq);
+    default:
+        return 0;  // pawns are not the same in both directions, so they are not in here
+    }
 }
 
 // same layout as the board printer, x for a set bit

@@ -72,6 +72,11 @@ constexpr bool is_ok(Square sq) {
     return sq <= SQ_H8;
 }
 
+// the other side, used everywhere once moves exist
+constexpr Colour operator~(Colour c) {
+    return Colour(c ^ BLACK);
+}
+
 constexpr Square make_square(File f, Rank r) {
     return Square((r << 3) + f);
 }

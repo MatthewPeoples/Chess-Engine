@@ -5,6 +5,7 @@
 
 #include "bitboard.hpp"
 #include "move.hpp"
+#include "movegen.hpp"
 #include "position.hpp"
 
 namespace {
@@ -56,6 +57,18 @@ int main() {
 
     std::string line;
     while (std::getline(std::cin, line)) {
+        // every pseudo-legal move in the position on screen
+        if (line == "moves") {
+            chess::MoveList list;
+            chess::generate<chess::ALL>(pos, list);
+
+            for (const chess::Move m : list) {
+                std::cout << chess::move_name(m) << ' ';
+            }
+            std::cout << "\n" << list.size() << " moves\n";
+            continue;
+        }
+
         // a square prints the attack sets from it, blocked by whatever is on the board
         if (const auto sq = to_square(line); sq.has_value()) {
             const chess::Bitboard occupied = pos.pieces();

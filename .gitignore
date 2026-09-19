@@ -68,3 +68,6 @@ vcpkg_installed/
 Testing/
 .cache/
 .DS_Store
+
+# personal notes
+/notes

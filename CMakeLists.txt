@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.21)
 
 project(chess
     VERSION 0.1.0
@@ -33,6 +33,25 @@ enable_testing()
 include(Warnings)
 include(Sanitizers)
 
+# engine core, all chess logic, no I/O
+add_library(chess_lib)
+target_sources(chess_lib
+    PRIVATE
+        src/position.cpp
+)
+target_include_directories(chess_lib
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+target_compile_features(chess_lib
+    PUBLIC
+        cxx_std_20
+)
+target_link_libraries(chess_lib
+    PRIVATE
+        chess_warnings
+)
+
 # universal chess interface
 add_executable(chess_uci)
 target_sources(chess_uci
@@ -41,7 +60,27 @@ target_sources(chess_uci
 )
 target_link_libraries(chess_uci
     PRIVATE
+        chess_lib
         chess_warnings
 )
+
+# unit tests
+add_executable(chess_tests)
+target_sources(chess_tests
+    PRIVATE
+        tests/position_test.cpp
+        tests/types_test.cpp
+        tests/fen_test.cpp
+)
+target_link_libraries(chess_tests
+    PRIVATE
+        chess_lib
+        chess_warnings
+        GTest::gtest_main
+)
+
+# one ctest entry per TEST() rather than one for the whole binary
+include(GoogleTest)
+gtest_discover_tests(chess_tests)
 
 include(StaticAnalysis)

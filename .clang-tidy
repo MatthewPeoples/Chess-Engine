@@ -6,7 +6,9 @@ Checks: >
   readability-*,
   -readability-magic-numbers,
   -readability-identifier-length,
-  -modernize-use-trailing-return-type
+  -readability-enum-initial-value,
+  -modernize-use-trailing-return-type,
+  -modernize-use-nodiscard
 
 CheckOptions:
   readability-identifier-naming.NamespaceCase: lower_case
@@ -14,10 +16,12 @@ CheckOptions:
   readability-identifier-naming.StructCase: CamelCase
   readability-identifier-naming.EnumCase: CamelCase
   readability-identifier-naming.FunctionCase: lower_case
-  readability-identifier-naming.VariableCase: lower_case
-  readability-identifier-naming.ParameterCase: lower_case
+  readability-identifier-naming.VariableCase: camelBack
+  readability-identifier-naming.ParameterCase: camelBack
   readability-identifier-naming.GlobalConstantCase: UPPER_CASE
   readability-identifier-naming.EnumConstantCase: UPPER_CASE
+  readability-identifier-naming.MemberCase: camelBack
+  readability-identifier-naming.TypeAliasCase: CamelCase
 
 WarningsAsErrors: ""
 

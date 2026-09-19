@@ -1,0 +1,5 @@
+InheritParentConfig: true
+
+# gtest ASSERT_TRUE returns on failure, which the optional-access check cannot see
+Checks: >
+  -bugprone-unchecked-optional-access

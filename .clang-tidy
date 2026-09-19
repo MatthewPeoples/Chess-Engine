@@ -22,6 +22,7 @@ CheckOptions:
   readability-identifier-naming.EnumConstantCase: UPPER_CASE
   readability-identifier-naming.MemberCase: camelBack
   readability-identifier-naming.TypeAliasCase: CamelCase
+  readability-function-cognitive-complexity.IgnoreMacros: true
 
 WarningsAsErrors: ""
 

@@ -38,6 +38,7 @@ add_library(chess_lib)
 target_sources(chess_lib
     PRIVATE
         src/position.cpp
+        src/bitboard.cpp
 )
 target_include_directories(chess_lib
     PUBLIC
@@ -71,6 +72,7 @@ target_sources(chess_tests
         tests/position_test.cpp
         tests/types_test.cpp
         tests/fen_test.cpp
+        tests/bitboard_test.cpp
 )
 target_link_libraries(chess_tests
     PRIVATE

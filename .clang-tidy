@@ -25,4 +25,4 @@ CheckOptions:
 
 WarningsAsErrors: ""
 
-HeaderFilterRegex: "include/chess/.*"
+HeaderFilterRegex: "include/.*"

@@ -41,6 +41,7 @@ target_sources(chess_lib
         src/bitboard.cpp
         src/move.cpp
         src/movegen.cpp
+        src/perft.cpp
 )
 target_include_directories(chess_lib
     PUBLIC
@@ -76,7 +77,9 @@ target_sources(chess_tests
         tests/fen_test.cpp
         tests/bitboard_test.cpp
         tests/move_test.cpp
+        tests/makemove_test.cpp
         tests/movegen_test.cpp
+        tests/perft_test.cpp
 )
 target_link_libraries(chess_tests
     PRIVATE

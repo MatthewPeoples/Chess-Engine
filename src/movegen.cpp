@@ -154,6 +154,30 @@ template <GenType T> void generate(const Position& pos, MoveList& list) {
     }
 }
 
+void generate_legal(Position& pos, MoveList& list) {
+    const Colour us = pos.side_to_move();
+
+    MoveList pseudo;
+    generate<ALL>(pos, pseudo);
+
+    for (const Move m : pseudo) {
+        // a king may not castle out of check or across an attacked square
+        // where it lands is covered by the general test below
+        if (m.type() == CASTLING) {
+            const auto crossed = Square((m.from_sq() + m.to_sq()) / 2);
+            if (pos.is_attacked(m.from_sq(), ~us) || pos.is_attacked(crossed, ~us)) {
+                continue;
+            }
+        }
+
+        const Undo undo = pos.do_move(m);
+        if (!pos.in_check(us)) {
+            list.add(m);
+        }
+        pos.undo_move(undo);
+    }
+}
+
 // there are only three of these, so they are built here rather than in every file that calls them
 template void generate<CAPTURES>(const Position&, MoveList&);
 template void generate<QUIETS>(const Position&, MoveList&);

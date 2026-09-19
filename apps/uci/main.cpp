@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <iostream>
 #include <optional>
 #include <string>
@@ -6,6 +7,7 @@
 #include "bitboard.hpp"
 #include "move.hpp"
 #include "movegen.hpp"
+#include "perft.hpp"
 #include "position.hpp"
 
 namespace {
@@ -57,6 +59,13 @@ int main() {
 
     std::string line;
     while (std::getline(std::cin, line)) {
+        // perft N counts leaf nodes from the position on screen, one line per first move
+        if (line.starts_with("perft ")) {
+            const auto depth = static_cast<int>(std::strtol(line.substr(6).c_str(), nullptr, 10));
+            chess::perft_divide(pos, depth, std::cout);
+            continue;
+        }
+
         // every pseudo-legal move in the position on screen
         if (line == "moves") {
             chess::MoveList list;

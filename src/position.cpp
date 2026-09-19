@@ -1,5 +1,7 @@
 #include "position.hpp"
 
+#include "bitboard.hpp"
+
 #include <array>
 #include <bit>
 #include <cassert>
@@ -8,6 +10,7 @@
 #include <ostream>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace chess {
@@ -17,10 +20,6 @@ namespace {
 // --- Text shared by FEN and printing ---
 // indexed by Piece: W_PAWN = 1 is 'P', B_PAWN = 9 is 'p', and NO_PIECE = 0 is an empty square
 constexpr std::string_view PIECE_TO_CHAR = ".PNBRQK  pnbrqk";
-
-std::string square_name(Square sq) {
-    return {static_cast<char>('a' + file_of(sq)), static_cast<char>('1' + rank_of(sq))};
-}
 
 std::string castling_string(CastlingRights cr) {
     std::string out;
@@ -201,6 +200,29 @@ void Position::put_piece(Piece pc, Square sq) {
     byColourBB[colour_of(pc)] |= square_bb(sq);
 }
 
+void Position::remove_piece(Square sq) {
+    const Piece pc = board[sq];
+    assert(pc != NO_PIECE);
+
+    board[sq] = NO_PIECE;
+    byTypeBB[ALL_PIECES] ^= square_bb(sq);
+    byTypeBB[type_of(pc)] ^= square_bb(sq);
+    byColourBB[colour_of(pc)] ^= square_bb(sq);
+}
+
+void Position::move_piece(Square from, Square to) {
+    const Piece pc = board[from];
+    assert(pc != NO_PIECE);
+    assert(board[to] == NO_PIECE);
+
+    const Bitboard both = square_bb(from) | square_bb(to);
+    board[from]         = NO_PIECE;
+    board[to]           = pc;
+    byTypeBB[ALL_PIECES] ^= both;
+    byTypeBB[type_of(pc)] ^= both;
+    byColourBB[colour_of(pc)] ^= both;
+}
+
 // --- Where the pieces are, and the rest of the state ---
 
 Bitboard Position::pieces() const {
@@ -328,6 +350,151 @@ std::string Position::fen() const {
     out += ' ' + std::to_string(rule50);
     out += ' ' + std::to_string(fullmoveNumber);
     return out;
+}
+
+// --- Playing moves ---
+
+namespace {
+
+// the castling rights a piece leaving or landing on this square destroys
+constexpr int rights_removed(Square sq) {
+    switch (sq) {
+    case SQ_E1:
+        return WHITE_OO | WHITE_OOO;
+    case SQ_A1:
+        return WHITE_OOO;
+    case SQ_H1:
+        return WHITE_OO;
+    case SQ_E8:
+        return BLACK_OO | BLACK_OOO;
+    case SQ_A8:
+        return BLACK_OOO;
+    case SQ_H8:
+        return BLACK_OO;
+    default:
+        return NO_CASTLING;
+    }
+}
+
+// where the rook starts and ends, worked out from where the king lands
+std::pair<Square, Square> castling_rook(Square kingFrom, Square kingTo) {
+    const bool kingside = kingTo > kingFrom;
+    return {kingside ? Square(kingTo + 1) : Square(kingTo - 2), kingside ? Square(kingTo - 1) : Square(kingTo + 1)};
+}
+
+}  // namespace
+
+Undo Position::do_move(Move m) {
+    const Colour us   = sideToMove;
+    const Square from = m.from_sq();
+    const Square to   = m.to_sq();
+    const Piece moved = board[from];
+
+    assert(moved != NO_PIECE);
+
+    Undo undo;
+    undo.move           = m;
+    undo.movedPiece     = moved;
+    undo.castlingRights = castlingRights;
+    undo.epSquare       = epSquare;
+    undo.rule50         = rule50;
+
+    // en passant takes a pawn that is not standing on the square the move lands on
+    const Square capturedOn = m.type() == EN_PASSANT ? Square(to - (us == WHITE ? 8 : -8)) : to;
+    const Piece captured    = m.type() == CASTLING ? NO_PIECE : board[capturedOn];
+
+    if (captured != NO_PIECE) {
+        undo.capturedPiece = captured;
+        undo.capturedOn    = capturedOn;
+        remove_piece(capturedOn);
+    }
+
+    if (m.type() == CASTLING) {
+        const auto [rookFrom, rookTo] = castling_rook(from, to);
+        move_piece(from, to);
+        move_piece(rookFrom, rookTo);
+    } else if (m.type() == PROMOTION) {
+        remove_piece(from);
+        put_piece(make_piece(us, m.promotion_piece()), to);
+    } else {
+        move_piece(from, to);
+    }
+
+    // a rook captured on its home square loses the rights just as surely as one that moves
+    castlingRights = CastlingRights(castlingRights & ~rights_removed(from) & ~rights_removed(to));
+
+    // only a double push leaves a square behind it
+    epSquare = SQ_NONE;
+    if (type_of(moved) == PAWN && (to > from ? to - from : from - to) == 16) {
+        epSquare = Square((from + to) / 2);
+    }
+
+    rule50 = type_of(moved) == PAWN || captured != NO_PIECE ? 0 : rule50 + 1;
+    if (us == BLACK) {
+        ++fullmoveNumber;
+    }
+    sideToMove = ~us;
+
+    return undo;
+}
+
+void Position::undo_move(const Undo& undo) {
+    sideToMove        = ~sideToMove;  // back to the side that made the move
+    const Move m      = undo.move;
+    const Square from = m.from_sq();
+    const Square to   = m.to_sq();
+
+    if (m.type() == CASTLING) {
+        const auto [rookFrom, rookTo] = castling_rook(from, to);
+        move_piece(rookTo, rookFrom);
+        move_piece(to, from);
+    } else if (m.type() == PROMOTION) {
+        remove_piece(to);
+        put_piece(undo.movedPiece, from);
+    } else {
+        move_piece(to, from);
+    }
+
+    if (undo.capturedPiece != NO_PIECE) {
+        put_piece(undo.capturedPiece, undo.capturedOn);
+    }
+
+    castlingRights = undo.castlingRights;
+    epSquare       = undo.epSquare;
+    rule50         = undo.rule50;
+    if (sideToMove == BLACK) {
+        --fullmoveNumber;
+    }
+}
+
+// --- Attacks ---
+
+bool Position::is_attacked(Square sq, Colour by) const {
+    const Bitboard occupied = pieces();
+
+    // pawns are the one asymmetric piece: to find black pawns hitting this square, ask where a
+    // white pawn standing here would capture
+    if ((pawn_attacks(~by, sq) & pieces(by, PAWN)) != 0) {
+        return true;
+    }
+    if ((knight_attacks(sq) & pieces(by, KNIGHT)) != 0) {
+        return true;
+    }
+    if ((king_attacks(sq) & pieces(by, KING)) != 0) {
+        return true;
+    }
+    if ((bishop_attacks(sq, occupied) & (pieces(by, BISHOP) | pieces(by, QUEEN))) != 0) {
+        return true;
+    }
+    return (rook_attacks(sq, occupied) & (pieces(by, ROOK) | pieces(by, QUEEN))) != 0;
+}
+
+Square Position::king_square(Colour c) const {
+    return lsb(pieces(c, KING));
+}
+
+bool Position::in_check(Colour c) const {
+    return is_attacked(king_square(c), ~c);
 }
 
 // --- Printing ---

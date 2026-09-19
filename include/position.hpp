@@ -6,6 +6,7 @@
 #include <string>
 #include <string_view>
 
+#include "move.hpp"
 #include "types.hpp"
 
 // The board: what stands on every square, whose turn it is, and the FEN text conversions
@@ -14,6 +15,17 @@ namespace chess {
 
 // inline means every file that includes this header shares one copy of the constant
 inline constexpr std::string_view START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+// what do_move could not work out backwards afterwards
+struct Undo {
+    Move move;
+    Piece movedPiece              = NO_PIECE;
+    Piece capturedPiece           = NO_PIECE;
+    Square capturedOn             = SQ_NONE;  // not the destination when the capture is en passant
+    CastlingRights castlingRights = NO_CASTLING;
+    Square epSquare               = SQ_NONE;
+    int rule50                    = 0;
+};
 
 class Position {
   public:
@@ -37,6 +49,20 @@ class Position {
     Bitboard pieces(Colour c, PieceType pt) const;
     Piece piece_on(Square sq) const;
 
+    // --- Playing moves ---
+
+    // hand the record back to undo_move to get the position exactly as it was
+    Undo do_move(Move m);
+    void undo_move(const Undo& undo);
+
+    // --- Asking about attacks ---
+
+    // generates attacks from the square and intersects with that colour's pieces, since attack
+    // relationships are symmetric
+    bool is_attacked(Square sq, Colour by) const;
+    Square king_square(Colour c) const;
+    bool in_check(Colour c) const;
+
     // --- The rest of the position ---
     Colour side_to_move() const;
     CastlingRights castling_rights() const;
@@ -49,6 +75,8 @@ class Position {
 
   private:
     void put_piece(Piece pc, Square sq);
+    void remove_piece(Square sq);
+    void move_piece(Square from, Square to);
 
     // --- Data ---
     std::array<Piece, SQUARE_NB> board{};            // square -> piece

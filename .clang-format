@@ -6,3 +6,4 @@ AllowShortFunctionsOnASingleLine: Empty
 AlignConsecutiveAssignments: Consecutive
 SpacesBeforeTrailingComments: 2
 BreakBeforeBinaryOperators: NonAssignment
+InsertNewlineAtEOF: true

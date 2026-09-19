@@ -137,6 +137,51 @@ constexpr Bitboard pawn_attacks(Colour c, Square sq) {
     return PAWN_ATTACKS[c][sq];
 }
 
+// --- Sliding attacks ---
+// These depend on what is in the way, each ray is walked one square at a time
+
+namespace detail {
+
+// walks outward until the board runs out or a piece is hit
+constexpr Bitboard ray(Square sq, Bitboard occupied, Bitboard (*step)(Bitboard)) {
+    Bitboard attacks = 0;
+    Bitboard walk    = step(square_bb(sq));
+
+    while (walk != 0) {
+        attacks |= walk;
+        if ((walk & occupied) != 0) {
+            break;
+        }
+        walk = step(walk);
+    }
+    return attacks;
+}
+
+}  // namespace detail
+
+// clang-format off
+// all possible rook moves
+constexpr Bitboard rook_attacks(Square sq, Bitboard occupied) {
+    return detail::ray(sq, occupied, shift_north)
+         | detail::ray(sq, occupied, shift_south)
+         | detail::ray(sq, occupied, shift_east)
+         | detail::ray(sq, occupied, shift_west);
+}
+
+// all possible bishop moves
+constexpr Bitboard bishop_attacks(Square sq, Bitboard occupied) {
+    return detail::ray(sq, occupied, shift_north_east)
+         | detail::ray(sq, occupied, shift_north_west)
+         | detail::ray(sq, occupied, shift_south_east)
+         | detail::ray(sq, occupied, shift_south_west);
+}
+// clang-format on
+
+// all possible queen moves, combination of rook and bishop
+constexpr Bitboard queen_attacks(Square sq, Bitboard occupied) {
+    return rook_attacks(sq, occupied) | bishop_attacks(sq, occupied);
+}
+
 // same layout as the board printer, x for a set bit
 void print(Bitboard bb, std::ostream& os);
 

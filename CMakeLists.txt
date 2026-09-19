@@ -59,6 +59,19 @@ target_link_libraries(chess_lib
         chess_warnings
 )
 
+# ask git what this commit is called, and bake the answer into the binary
+execute_process(
+    COMMAND git describe --tags --always --dirty
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    OUTPUT_VARIABLE CHESS_VERSION
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+)
+if(NOT CHESS_VERSION)
+    set(CHESS_VERSION "unknown")
+endif()
+target_compile_definitions(chess_lib PUBLIC CHESS_VERSION="${CHESS_VERSION}")
+
 # universal chess interface
 add_executable(chess_uci)
 target_sources(chess_uci

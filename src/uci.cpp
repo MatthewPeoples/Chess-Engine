@@ -132,7 +132,7 @@ void uci_loop(std::istream& in, std::ostream& out) {
         const std::string& command = words[0];
 
         if (command == "uci") {
-            out << "id name Chess-Engine\nid author Matthew Peoples\nuciok\n" << std::flush;
+            out << "id name Chess-Engine " << CHESS_VERSION << "\nid author Matthew Peoples\nuciok\n" << std::flush;
         } else if (command == "isready") {
             out << "readyok\n" << std::flush;
         } else if (command == "ucinewgame") {

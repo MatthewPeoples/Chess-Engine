@@ -71,3 +71,6 @@ Testing/
 
 # personal notes
 /notes
+
+# env file
+.env

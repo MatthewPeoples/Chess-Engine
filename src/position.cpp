@@ -315,6 +315,10 @@ std::optional<Position> Position::from_fen(std::string_view fen) {
     if (!exactly_one_king(pos)) {
         return std::nullopt;
     }
+    // the side that just moved cannot have left its own king in check
+    if (pos.in_check(~pos.sideToMove)) {
+        return std::nullopt;
+    }
     return pos;
 }
 

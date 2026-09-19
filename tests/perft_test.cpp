@@ -163,7 +163,7 @@ TEST(Legality, CastlingRulesAboutCheck) {
     EXPECT_TRUE(contains(crossing, "e1c1"));
 
     // in check, so neither castle is available
-    const auto inCheck = legal_names("4r2k/8/8/8/8/8/8/R3K2R w KQ - 0 1");
+    const auto inCheck = legal_names("4r3/6k1/8/8/8/8/8/R3K2R w KQ - 0 1");
     EXPECT_FALSE(contains(inCheck, "e1g1"));
     EXPECT_FALSE(contains(inCheck, "e1c1"));
 

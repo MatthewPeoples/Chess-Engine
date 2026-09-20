@@ -88,7 +88,6 @@ export function BoardPanel({
     useEffect(() => {
         if (!atLive) {
             setSelected(null);
-            setPremove(null);
             setPromotion(null);
         }
     }, [atLive, viewPly]);
@@ -103,6 +102,20 @@ export function BoardPanel({
     const watching = humanColour === null;
     const humansTurn = state?.status === "playing" && state.turn === humanColour && atLive;
     const myTurn = humansTurn && !paused;
+    const interactionBoard = useMemo(() => {
+        if (humansTurn || !humanColour || state?.status !== "playing") {
+            return board;
+        }
+
+        const fields = fen.split(" ");
+        fields[1] = humanColour;
+        fields[3] = "-";
+        try {
+            return new Chess(fields.join(" "));
+        } catch {
+            return board;
+        }
+    }, [board, fen, humanColour, humansTurn, state?.status]);
     const canTakeBack =
         atLive && myTurn && livePly > 0 && !watching && state?.status === "playing" && !paused;
     const canReplayTakeback =
@@ -111,6 +124,7 @@ export function BoardPanel({
     const canGoForward = viewPly < livePly || canReplayTakeback;
 
     const handleBack = () => {
+        setPremove(null);
         if (canTakeBack) {
             onBack();
             return;
@@ -150,8 +164,8 @@ export function BoardPanel({
         if (!selected) {
             return new Set<string>();
         }
-        return new Set(board.moves({ square: selected as never, verbose: true }).map((move) => move.to));
-    }, [board, selected]);
+        return new Set(interactionBoard.moves({ square: selected as never, verbose: true }).map((move) => move.to));
+    }, [interactionBoard, selected]);
 
     const squareStyles = useMemo(() => {
         const styles: Record<string, CSSProperties> = {};
@@ -191,7 +205,10 @@ export function BoardPanel({
         // Queue moves made during the engine's turn as premoves.
         if (!humansTurn) {
             const mine = board.get(from as never)?.color === humanColour;
-            if (mine) {
+            const legal = interactionBoard
+                .moves({ square: from as never, verbose: true })
+                .some((move) => move.to === to);
+            if (mine && legal) {
                 if (paused) {
                     onSetPause(false);
                 }

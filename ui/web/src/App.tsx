@@ -1,5 +1,8 @@
 import { useState } from "react";
 
+import { ArenaSetupModal } from "./components/ArenaSetupModal.js";
+import { ArenaView } from "./components/ArenaView.js";
+import { ResultsView } from "./components/ResultsView.js";
 import { AnalysisPanel } from "./components/AnalysisPanel.js";
 import { AppHeader, type Tab } from "./components/AppHeader.js";
 import { BoardPanel } from "./components/BoardPanel.js";
@@ -13,11 +16,12 @@ import { useGame, useTickingClocks } from "./useGame.js";
 type Route = "hero" | Tab;
 
 export default function App() {
-    const { connected, builds, timeControls, state, engine, error, actions } = useGame();
+    const { connected, builds, timeControls, state, engine, arena, runs, error, actions } = useGame();
     const clocks = useTickingClocks(state);
     const [theme, toggleTheme] = useTheme();
     const [route, setRoute] = useState<Route>("hero");
     const [setupOpen, setSetupOpen] = useState(false);
+    const [arenaSetupOpen, setArenaSetupOpen] = useState(false);
 
     if (route === "hero") {
         return (
@@ -81,21 +85,15 @@ export default function App() {
                 )}
 
                 {route === "arena" && (
-                    <div className="empty">
-                        <strong>Arena is next</strong>
-                        Hundreds of games in parallel, live Elo with a confidence margin, and a verdict on whether the
-                        new version is a real improvement.
-                        <br />
-                        The match runner lands in the next build.
-                    </div>
+                    <ArenaView
+                        arena={arena}
+                        builds={builds}
+                        onOpenSetup={() => setArenaSetupOpen(true)}
+                        onStop={actions.stopArena}
+                    />
                 )}
 
-                {route === "results" && (
-                    <div className="empty">
-                        <strong>No runs yet</strong>
-                        The Elo chart and the run history appear here after the first arena finishes.
-                    </div>
-                )}
+                {route === "results" && <ResultsView runs={runs} />}
             </div>
 
             {setupOpen && (
@@ -107,6 +105,17 @@ export default function App() {
                         actions.newGame(options);
                         setSetupOpen(false);
                         setRoute("play");
+                    }}
+                />
+            )}
+            {arenaSetupOpen && (
+                <ArenaSetupModal
+                    builds={builds}
+                    onClose={() => setArenaSetupOpen(false)}
+                    onStart={(setup) => {
+                        actions.startArena(setup);
+                        setArenaSetupOpen(false);
+                        setRoute("arena");
                     }}
                 />
             )}

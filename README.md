@@ -1,119 +1,136 @@
-# Chess Engine
+# Matthew's Chess Engine
 
-![CI](https://github.com/MatthewPeoples/Chess-Engine/actions/workflows/ci.yaml/badge.svg)
+[CI](https://github.com/MatthewPeoples/Chess-Engine/actions/workflows/ci.yaml)
 
-A UCI chess engine written from scratch in C++20, using bitboard board representation. Builds on Linux, macOS and Windows.
+A UCI chess engine written from scratch in C++20, with a browser front end for playing it and a built-in arena for proving a new version is actually stronger than the old one.
 
-It plays a full game of chess: bitboard move generation validated against the standard perft positions, alpha-beta search with iterative deepening, quiescence and move ordering, and a material plus piece-square table evaluation. It speaks UCI, so it loads into any chess GUI.
+---
 
 ## What it does
 
-- **Board representation** - 6 piece-type bitboards, 2 colour bitboards and a redundant piece array, little-endian rank-file mapping
-- **Move generation** - compile-time attack tables for knights, kings and pawns, ray walking for sliders, legal move generation validated by perft
-- **Search** - alpha-beta negamax, iterative deepening, quiescence search, MVV-LVA move ordering, time management
-- **Evaluation** - material and piece-square tables, with a separate king table for the endgame
-- **Interface** - UCI over stdin and stdout, plus `d` and `perft` for debugging
+- **Plays chess properly.** Bitboard move generation, validated against the standard perft positions to 119 million nodes.
+- **Thinks.** Alpha-beta search with iterative deepening, quiescence and move ordering, reaching depth 7 in the opening inside a fifth of a second.
+- **Speaks UCI**, so it loads into any chess GUI, or onto Lichess as a bot.
+- **Tests itself.** Run two versions against each other, hundreds of games in parallel, and get an Elo difference with a confidence margin and a statistical verdict.
 
-Not done yet: magic bitboards, a transposition table, and NNUE evaluation.
 
-## Requirements
 
-- CMake 3.21+
-- A C++20 compiler (tested with AppleClang, GCC and MSVC)
+## See it
 
-GoogleTest is fetched automatically at configure time.
+> *Screenshot slot: Bot vs Bot*
+>
+> *Screenshot slot: Results tab*
 
-## Building
 
-Configure presets are defined in `CMakePresets.json`. Each writes to its own directory:
 
-| Preset    | Directory       | Flags                               |
-| --------- | --------------- | ----------------------------------- |
-| `debug`   | `build`         | `-g`                                |
-| `release` | `build-release` | `-O3`                               |
-| `asan`    | `build-asan`    | `-O2 -g`, address and UB sanitisers |
+**Play -** Bot vs Bot or User vs Bot
+
+**Results** - every run, and the engine's strength across versions. 
+
+## Quick start
+
+sh
 
 ```sh
-cmake --preset release
-cmake --build build-release
+git clone https://github.com/MatthewPeoples/Chess-Engine.git
+cd Chess-Engine
+cmake --preset release && cmake --build build-release
+cd ui && npm install && npm run dev
 ```
 
-On Windows the Visual Studio generator is multi-config, so the configuration is chosen at build time rather than configure time:
+Open [http://localhost:5173](http://localhost:5173) and play.
+
+To use it in a chess GUI instead, point [Cute Chess](https://cutechess.com/) at `build-release/bin/chess_uci`. It also runs as a Lichess bot through [lichess-bot](https://github.com/lichess-bot-devs/lichess-bot) - the engine speaks ordinary UCI, so nothing special is needed.
+
+## How strong is it
+
+
+| Metric             | Strength                              |
+| ------------------ | ------------------------------------- |
+| Search depth in 1s | 7 from the opening position           |
+| Bench              | 13.3M nodes, ~2.1M nodes/sec, depth 6 |
+| Perft 6            | 119,060,324 nodes in 4.0s             |
+
+
+*Measured on a 14" MacBook Pro (M5 Pro)*
+
+## Proving it's correct
+
+**Perft**: Counts leaf nodes to a fixed depth and compares against published values, and a single wrong move anywhere changes the total
+
+All six standard positions match:
+
+
+| Position   | Depth | Nodes       |
+| ---------- | ----- | ----------- |
+| Start      | 6     | 119,060,324 |
+| Kiwipete   | 5     | 193,690,690 |
+| Position 3 | 5     | 674,624     |
+| Position 4 | 4     | 422,333     |
+| Position 5 | 4     | 2,103,487   |
+| Position 6 | 4     | 3,894,594   |
+
+
+
+
+81 unit tests cover square and piece encoding, FEN in both directions, attack generation, make and unmake, legality, perft, evaluation, search and the UCI protocol. CI builds and runs them on Linux, macOS and Windows.
 
 ```sh
-cmake --build build --config Release
-ctest --test-dir build --build-config Release --output-on-failure
+cmake --preset debug && cmake --build build && ctest --test-dir build --output-on-failure
 ```
 
-## Playing against it
 
-The engine speaks UCI, so any GUI can drive it. Point [Cute Chess](https://cutechess.com/) or [Arena](http://www.playwitharena.de/) at `build-release/bin/chess_uci`.
 
-By hand:
+## Testing a new change
+
+The hard question in engine development isn't "does it work", it's **"is this version actually better, or did it get lucky?"** A hundred games can easily show a 55% score from a change worth nothing.
+
+The arena answers it properly. Two versions play hundreds of games in parallel, each opening played twice with the colours swapped so white's advantage cancels out, and the result is scored with a **sequential probability ratio test** - The standard tool in engine development. It tracks how strongly the games favour the new version, and crossing ±2.94 means 95% confidence in either direction.
+
+
+
+> *Screenshot slot: the scoreboard and LLR bar, mid-run.*
+
+
+
+Speed and strength get separate charts on purpose. Some changes like a transposition table makes an engine substantially stronger while making nodes-per-second go *down*, because each node does more work.
+
+## How it works
 
 ```
-uci
-position startpos moves e2e4 e7e5
-go movetime 1000
+include/types.hpp      colours, pieces, squares, and the conversions between them
+include/bitboard.hpp   file masks, shifts, attack tables, ray walking
+include/move.hpp       a move packed into 16 bits, and a fixed-capacity move list
+include/position.hpp   the board, FEN, make/unmake, attack queries
+include/movegen.hpp    pseudo-legal and legal move generation
+include/eval.hpp       material and piece-square tables
+include/search.hpp     alpha-beta with iterative deepening
+include/uci.hpp        the protocol loop
+ui/server              Node: owns the engine processes, the rules and the clocks
+ui/web                 React: boards, metrics, charts
 ```
 
-```
-info depth 7 score cp 35 nodes 766791 nps 3704304 time 207 pv e2e4 b8c6 g1f3 g8f6 e4e5 f6e4 b1c3
-bestmove e2e4
-```
+The engine is a static library with no I/O and no web dependency. The browser can't start a process, so the Node server owns the engine and acts as the arbiter - it validates every move with `chess.js` and runs the clocks, and the engine is only ever asked "**what would you play here**", which is the same question Lichess would ask it.  
 
-`d` prints the board, the FEN and the static evaluation. `perft N` counts leaf nodes from the current position, one line per first move.
 
-Engine against engine, with [cutechess-cli](https://github.com/cutechess/cutechess):
+### Decisions worth explaining
 
-```sh
-cutechess-cli \
-  -engine name=chess cmd=./build-release/bin/chess_uci proto=uci \
-  -engine name=opponent cmd=/path/to/other-engine proto=uci \
-  -each tc=10+0.1 -games 100 -pgnout match.pgn
-```
+**The board is stored twice.** Bitboards answer "where are all the black knights" in one operation but are slow at "what is on e4"; a plain 64-square array is the reverse. Move generation needs the first constantly, printing and captures need the second. The cost is two copies of the same truth, so the data is private and one function is the only writer.
 
-## Perft
+**A move is 16 bits with no capture flag.** Six bits each for from and to, four for the type and promotion piece. There's no "is a capture" bit because the board already knows, and a second copy of a fact can disagree with the first.
 
-Move generation is checked against the published node counts on the six standard positions:
+**Make/unmake rather than copy-make.** Copying the whole position per move is simpler and harder to get wrong. Make/unmake with an undo record is faster and is what NNUE needs (planned for future), because the evaluation is updated incrementally as pieces move and rolled back on the way out. The undo record carries the moved piece and the captured piece for exactly that reason.
 
-| position                                                              | depth | nodes       |
-| --------------------------------------------------------------------- | ----- | ----------- |
-| start                                                                   | 6     | 119,060,324 |
-| kiwipete                                                                | 5     | 193,690,690 |
-| `8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -`                                 | 5     | 674,624     |
-| `r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq -`          | 4     | 422,333     |
-| `rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8`             | 4     | 2,103,487   |
-| `r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10` | 4   | 3,894,594   |
+**Classical ray-walking sliders are permanent.** They're slow and obviously correct, which makes them the reference the magic bitboard version gets tested against when it arrives.
 
-The test suite runs the shallower depths on every build. The two deep ones are run by hand:
+## What's next
 
-```sh
-echo -e "position startpos\nperft 6\nquit" | ./build-release/bin/chess_uci
-```
+- **Magic bitboards** for sliding attacks, differentially tested against the ray walker
+- **Transposition table**, and a Zobrist key, which also brings repetition detection
+- **NNUE evaluation** - the reason make/unmake was chosen over copy-make
 
-## Testing
 
-```sh
-cmake --preset debug
-cmake --build build && ctest --test-dir build --output-on-failure
-```
 
-81 tests covering square and piece encoding, FEN in both directions, attack generation, make and unmake, legality, perft, evaluation, search and the UCI protocol.
+##### Note:
 
-## Layout
-
-| Path       | Contents                                  |
-| ---------- | ----------------------------------------- |
-| `include/` | Public headers (`chess_lib` interface)    |
-| `src/`     | Engine implementation                     |
-| `apps/`    | Executables - currently the UCI front end |
-| `tests/`   | GoogleTest unit tests                     |
-
-Chess logic lives in `chess_lib`, a static library with no I/O. Executables and tests link against it.
-
-## Tooling
-
-- `clang-format` - style enforced by `.clang-format`
-- `clang-tidy` - static analysis, opt in with `-DCHESS_ENABLE_CLANG_TIDY=ON`
-- Sanitisers - opt in with `-DCHESS_ENABLE_SANITIZERS=ON`
+Built with AI assistance throughout. The design decisions were mine · see `DECISIONS.md`

@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type {
+    ArenaSetup,
+    ArenaState,
     BuildInfo,
     ClientMessage,
     Colour,
     EngineSnapshot,
     GameState,
     ServerMessage,
+    RunSummary,
     TimeControl,
 } from "../../shared/protocol.js";
 
@@ -28,6 +31,8 @@ export function useGame() {
     const [state, setState] = useState<GameState | null>(null);
     const [engine, setEngine] = useState<EngineSnapshot | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [arena, setArena] = useState<ArenaState | null>(null);
+    const [runs, setRuns] = useState<RunSummary[]>([]);
 
     useEffect(() => {
         const ws = new WebSocket(SOCKET_URL);
@@ -51,6 +56,12 @@ export function useGame() {
                     break;
                 case "engine":
                     setEngine(message.snapshot);
+                    break;
+                case "arena":
+                    setArena(message.state);
+                    break;
+                case "runs":
+                    setRuns(message.runs);
                     break;
                 case "error":
                     setError(message.message);
@@ -84,11 +95,16 @@ export function useGame() {
                 send({ type: "resign" });
             },
             setPause: (paused: boolean) => send({ type: "set-pause", paused }),
+            startArena: (setup: ArenaSetup) => {
+                setError(null);
+                send({ type: "start-arena", setup });
+            },
+            stopArena: () => send({ type: "stop-arena" }),
         }),
         [send],
     );
 
-    return { connected, builds, timeControls, state, engine, error, actions };
+    return { connected, builds, timeControls, state, engine, arena, runs, error, actions };
 }
 
 // The server owns clock state; this interpolates between updates for a smooth display.

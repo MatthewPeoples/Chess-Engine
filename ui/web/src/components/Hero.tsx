@@ -265,7 +265,7 @@ export function Hero({ connected, theme, onToggleTheme, onPlay, onArena }: Props
                             disabled={transitioning}
                         >
                             <div className="hero-choice-title">ARENA →</div>
-                            <div className="hero-choice-sub">Up to 10 games in parallel. Elo with a margin.</div>
+                            <div className="hero-choice-sub">Up to 8 games in parallel. Elo with a margin.</div>
                         </button>
                     </div>
                 </div>

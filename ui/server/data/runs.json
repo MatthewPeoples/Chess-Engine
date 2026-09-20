@@ -1,0 +1,30 @@
+[
+  {
+    "finishedAt": "2026-09-20T21:37:54.159Z",
+    "main": "Chess-Engine v1.0",
+    "opponent": "Chess-Engine v1.0",
+    "games": 100,
+    "wins": 27,
+    "draws": 46,
+    "losses": 27,
+    "elo": 0,
+    "error": 50.4,
+    "llr": -0.01,
+    "verdict": "rejected",
+    "timeControl": "10+0.1"
+  },
+  {
+    "finishedAt": "2026-09-20T21:49:40.607Z",
+    "main": "Chess-Engine v1.0",
+    "opponent": "Chess-Engine v1.0",
+    "games": 55,
+    "wins": 17,
+    "draws": 22,
+    "losses": 16,
+    "elo": 6.3,
+    "error": 72.1,
+    "llr": 0.01,
+    "verdict": "undecided",
+    "timeControl": "10+0.1"
+  }
+]

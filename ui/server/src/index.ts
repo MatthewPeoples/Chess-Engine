@@ -5,9 +5,12 @@ import path from "node:path";
 import { WebSocketServer } from "ws";
 
 import type { BuildInfo, ClientMessage, ServerMessage } from "../../shared/protocol.js";
-import { TIME_CONTROLS } from "../../shared/protocol.js";
+import { ARENA_TIME_CONTROLS, TIME_CONTROLS } from "../../shared/protocol.js";
 import { findBuild, listBuilds } from "./builds.js";
+import { Arena } from "./arena.js";
+import { openingBook } from "./book.js";
 import { Game } from "./game.js";
+import { loadRuns } from "./runs.js";
 
 const PORT = Number(process.env.PORT ?? 8787);
 const WEB_DIST = path.resolve(import.meta.dirname, "../../web/dist");
@@ -52,8 +55,11 @@ sockets.on("connection", (socket) => {
     };
 
     const game = new Game(send);
+    const arena = new Arena(send);
     send({ type: "builds", builds: listBuilds(), timeControls: TIME_CONTROLS });
     send({ type: "state", state: game.state() });
+    send({ type: "arena", state: arena.state() });
+    send({ type: "runs", runs: loadRuns() });
 
     socket.on("message", (raw) => {
         let message: ClientMessage;
@@ -66,7 +72,10 @@ sockets.on("connection", (socket) => {
         void handle(message);
     });
 
-    socket.on("close", () => game.dispose());
+    socket.on("close", () => {
+        game.dispose();
+        arena.dispose();
+    });
 
     async function handle(message: ClientMessage): Promise<void> {
         switch (message.type) {
@@ -115,6 +124,32 @@ sockets.on("connection", (socket) => {
 
             case "forward":
                 game.forward();
+                break;
+
+            case "start-arena": {
+                const setup = message.setup;
+                const main = findBuild(setup.mainId);
+                const opponent = findBuild(setup.opponentId);
+                const timeControl = ARENA_TIME_CONTROLS.find((control) => control.name === setup.timeControl);
+
+                if (!main || !opponent || !timeControl) {
+                    send({ type: "error", message: "unknown version or time control" });
+                    return;
+                }
+
+                // the book is generated once and cached, so this is instant after the first run
+                void arena.start(setup, main, opponent, timeControl, openingBook()).catch((error: unknown) => {
+                    send({ type: "error", message: `arena stopped: ${String(error)}` });
+                });
+                break;
+            }
+
+            case "stop-arena":
+                arena.stop();
+                break;
+
+            case "list-runs":
+                send({ type: "runs", runs: loadRuns() });
                 break;
 
             case "resign":

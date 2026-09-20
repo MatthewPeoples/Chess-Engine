@@ -81,13 +81,18 @@ export type ClientMessage =
     | { type: "takeback" }
     | { type: "forward" }
     | { type: "resign" }
-    | { type: "set-pause"; paused: boolean };
+    | { type: "set-pause"; paused: boolean }
+    | { type: "start-arena"; setup: ArenaSetup }
+    | { type: "stop-arena" }
+    | { type: "list-runs" };
 
 export type ServerMessage =
     | { type: "builds"; builds: BuildInfo[]; timeControls: TimeControl[] }
     | { type: "state"; state: GameState }
     | { type: "engine"; snapshot: EngineSnapshot }
-    | { type: "error"; message: string };
+    | { type: "error"; message: string }
+    | { type: "arena"; state: ArenaState }
+    | { type: "runs"; runs: RunSummary[] };
 
 // Reserved wire contract for the arena runner; currently no producer sends these types.
 
@@ -95,7 +100,7 @@ export interface ArenaSetup {
     mainId: string;
     opponentId: string;
     games: number;
-    parallel: number; // Valid range: 2–10.
+    parallel: number; // Valid range: 2–8.
     timeControl: string;
 }
 
@@ -127,6 +132,24 @@ export interface ArenaScore {
 }
 
 export const LLR_BOUND = 2.94;
+
+// Arena runs at a faster control than a person would play: relative strength transfers down,
+// and the games per hour is what shrinks the error bar
+export const ARENA_TIME_CONTROLS: TimeControl[] = [
+    { name: "10+0.1", baseMs: 10_000, incrementMs: 100 },
+    { name: "1+1", baseMs: 60_000, incrementMs: 1_000 },
+    { name: "3+0", baseMs: 180_000, incrementMs: 0 },
+];
+
+export interface ArenaState {
+    phase: "idle" | "bench" | "playing" | "finished" | "stopped";
+    setup?: ArenaSetup;
+    mainVersion: string;
+    opponentVersion: string;
+    games: ArenaGame[];
+    score: ArenaScore;
+    bench?: { nodes: number; nps: number; depth: number };
+}
 
 export interface RunSummary {
     finishedAt: string;

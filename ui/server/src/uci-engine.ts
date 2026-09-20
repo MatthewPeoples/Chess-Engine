@@ -128,19 +128,25 @@ export class UciEngine {
 
     private waitFor(matches: (line: string) => boolean, onLine?: LineHandler): Promise<string> {
         return new Promise((resolve, reject) => {
+            // both paths take the listeners back off, or a long run leaks one per search
+            const done = () => {
+                this.handlers.delete(handler);
+                this.process.off("exit", onExit);
+            };
+            const onExit = () => {
+                done();
+                reject(new Error(`${this.path} exited while waiting`));
+            };
             const handler: LineHandler = (line) => {
                 onLine?.(line);
                 if (matches(line)) {
-                    this.handlers.delete(handler);
+                    done();
                     resolve(line);
                 }
             };
-            this.handlers.add(handler);
 
-            this.process.once("exit", () => {
-                this.handlers.delete(handler);
-                reject(new Error(`${this.path} exited while waiting`));
-            });
+            this.handlers.add(handler);
+            this.process.once("exit", onExit);
         });
     }
 

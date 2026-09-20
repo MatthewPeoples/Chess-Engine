@@ -74,3 +74,14 @@ export function averageMoveTime(moves: MoveRecord[], colour: "w" | "b" | null): 
     }
     return formatSeconds(mine.reduce((total, move) => total + move.msSpent, 0) / mine.length);
 }
+
+// 43:12 under an hour, 1:02:40 over it.
+export function formatDuration(ms: number): string {
+    const total = Math.max(0, Math.round(ms / 1000));
+    const hours = Math.floor(total / 3600);
+    const minutes = Math.floor((total % 3600) / 60);
+    const seconds = total % 60;
+
+    const pad = (value: number) => String(value).padStart(2, "0");
+    return hours > 0 ? `${hours}:${pad(minutes)}:${pad(seconds)}` : `${minutes}:${pad(seconds)}`;
+}

@@ -2,7 +2,7 @@
 
 [CI](https://github.com/MatthewPeoples/Chess-Engine/actions/workflows/ci.yaml)
 
-A UCI chess engine written from scratch in C++20, with a browser front end for playing it and a built-in arena for proving a new version is actually stronger than the old one.
+A UCI chess engine written from scratch in C++20, with a browser front end for playing it and a built-in arena for testing and implementing new versions
 
 https://github.com/user-attachments/assets/6bbf866c-7998-4ef1-910b-ad149324da58
 

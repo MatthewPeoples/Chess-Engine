@@ -1,5 +1,9 @@
 #include "uci.hpp"
 
+#ifndef CHESS_VERSION
+#define CHESS_VERSION "dev"  // set by CMake from git describe
+#endif
+
 #include <charconv>
 #include <istream>
 #include <optional>

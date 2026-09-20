@@ -74,3 +74,14 @@ Testing/
 
 # env file
 .env
+
+# benchmark harness
+builds/
+.bench/
+tools/matches/
+tools/report.html
+
+# ui
+node_modules/
+ui/web/dist/
+.builds-src/

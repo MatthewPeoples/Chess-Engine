@@ -70,6 +70,7 @@ execute_process(
 if(NOT CHESS_VERSION)
     set(CHESS_VERSION "unknown")
 endif()
+message(STATUS "Engine version: ${CHESS_VERSION}")
 target_compile_definitions(chess_lib PUBLIC CHESS_VERSION="${CHESS_VERSION}")
 
 # universal chess interface

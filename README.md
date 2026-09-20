@@ -4,6 +4,8 @@
 
 A UCI chess engine written from scratch in C++20, with a browser front end for playing it and a built-in arena for proving a new version is actually stronger than the old one.
 
+https://github.com/user-attachments/assets/6bbf866c-7998-4ef1-910b-ad149324da58
+
 ---
 
 ## What it does
@@ -16,16 +18,11 @@ A UCI chess engine written from scratch in C++20, with a browser front end for p
 
 
 ## See it
+### Play Bot vs Bot or User vs Bot
+<img width="1452" height="901" alt="Screenshot 2026-09-21 at 00 06 38" src="https://github.com/user-attachments/assets/54081ff0-ca92-410b-9358-c1b2d98b9e23" />
 
-> *Screenshot slot: Bot vs Bot*
->
-> *Screenshot slot: Results tab*
-
-
-
-**Play -** Bot vs Bot or User vs Bot
-
-**Results** - every run, and the engine's strength across versions. 
+### Results - every run, and the engine's strength across versions. 
+<img width="1456" height="326" alt="Screenshot 2026-09-21 at 00 07 20" src="https://github.com/user-attachments/assets/70fa6aa1-0215-424a-952c-39b1ec2530ad" />
 
 ## Quick start
 
@@ -87,12 +84,6 @@ The hard question in engine development isn't "does it work", it's **"is this ve
 
 The arena answers it properly. Two versions play hundreds of games in parallel, each opening played twice with the colours swapped so white's advantage cancels out, and the result is scored with a **sequential probability ratio test** - The standard tool in engine development. It tracks how strongly the games favour the new version, and crossing ±2.94 means 95% confidence in either direction.
 
-
-
-> *Screenshot slot: the scoreboard and LLR bar, mid-run.*
-
-
-
 Speed and strength get separate charts on purpose. Some changes like a transposition table makes an engine substantially stronger while making nodes-per-second go *down*, because each node does more work.
 
 ## How it works
@@ -128,9 +119,3 @@ The engine is a static library with no I/O and no web dependency. The browser ca
 - **Magic bitboards** for sliding attacks, differentially tested against the ray walker
 - **Transposition table**, and a Zobrist key, which also brings repetition detection
 - **NNUE evaluation** - the reason make/unmake was chosen over copy-make
-
-
-
-##### Note:
-
-Built with AI assistance throughout. The design decisions were mine · see `DECISIONS.md`
